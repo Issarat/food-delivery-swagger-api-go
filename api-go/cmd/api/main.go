@@ -13,6 +13,7 @@ import (
 	"github.com/Issarat/food-delivery-swagger-api-go/api-go/internal/postgres"
 	"github.com/Issarat/food-delivery-swagger-api-go/api-go/internal/middleware"
 	"github.com/Issarat/food-delivery-swagger-api-go/api-go/internal/auth"
+	"github.com/Issarat/food-delivery-swagger-api-go/api-go/internal/orders"
 )
 
 func main() {
@@ -64,6 +65,13 @@ func run() error {
 
 	authGroup.POST("/logout", requireJWT, authHandler.Logout)
 	authGroup.POST("/change-password", requireJWT, authHandler.ChangePassword)
+
+	ordersGroup := router.Group("/orders", requireJWT)
+	orderRepo := orders.NewPostgresOrderRepo(db)
+	orderHandler := orders.NewHandler(orderRepo)
+	ordersGroup.GET("", orderHandler.List)            
+	ordersGroup.GET("/:id", orderHandler.GetByID)    
+	
 
 	server := &http.Server{
 		Addr:              cfg.Addr,
