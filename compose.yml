@@ -1,0 +1,36 @@
+name: food-delivery
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: food_delivery
+      POSTGRES_USER: food_delivery
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/setup:ro
+      - ./data:/data:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "food_delivery", "-d", "food_delivery"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+  api-go:
+    build:
+      context: .
+      dockerfile: api-go\Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "8080"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+volumes:
+  postgres_data:
