@@ -1,6 +1,6 @@
 # Food Delivery API
 
-A REST API for browsing food delivery orders. Built with Go, Gin, and PostgreSQL, with JWT authentication and interactive API documentation in Swagger UI.
+Browse food delivery orders with Go and Gin, and analyze order counts and market share with FastAPI. Both services use PostgreSQL, JWT bearer authentication, and Swagger UI.
 
 ## Features
 
@@ -46,10 +46,10 @@ To load sample orders, run the seed script after the schema is ready.
 docker compose exec -T db psql -v ON_ERROR_STOP=1 -U food_delivery -d food_delivery -f /setup/seed.sql
 ```
 
-### 3. Build and start the API
+### 3. Build and start both APIs
 
 ```powershell
-docker compose up -d --build api-go
+docker compose up -d --build api-go analytics-api
 docker compose ps
 ```
 
@@ -85,6 +85,28 @@ If you changed `API_PORT`, use that port in both URLs.
 GET /orders?pageindex=1&pagesize=20&metro_city=Bangkok
 ```
 
+## Analytics API
+
+- [Swagger UI](http://localhost:8000/docs)
+- [Database health check](http://localhost:8000/health/db)
+
+Log in through the Go API, then paste its access token into **Authorize** in Analytics Swagger. Both services use the same `JWT_SECRET` from the repository's root `.env`. Logging out through Go revokes the token for both services.
+
+| GET endpoint | Result |
+| --- | --- |
+| `/analytics/orders/summary` | Order counts grouped by city, channel, and cuisine |
+| `/analytics/orders/breakdown` | The same grouped counts as `/summary` |
+| `/analytics/orders/daily` | Grouped counts split by calendar day in `Asia/Bangkok` |
+| `/analytics/orders/marketshare` | Order counts and percentages by the required `group_by` dimension |
+
+All four routes require JWT and accept optional `metro_city`, `order_channel`, and `cuisine_category` filters. Blank values are skipped. Other values use exact matches combined with `AND`. All four routes return arrays, with `[]` when no orders match.
+
+Daily counts use `created_at`, which reflects the import date for seeded orders. Market share divides each group's order count by the total number of orders after filtering. Set `group_by` to `metro_city`, `order_channel`, or `cuisine_category`.
+
+```http
+GET /analytics/orders/marketshare?group_by=order_channel&metro_city=Bangkok
+```
+
 ## Project layout
 
 | Path                          | Contents                                                       |
@@ -94,6 +116,7 @@ GET /orders?pageindex=1&pagesize=20&metro_city=Bangkok
 | `api-go/internal/middleware/` | JWT validation and revocation checks                           |
 | `api-go/internal/orders/`     | Order handlers and database queries                            |
 | `api-go/docs/`                | Swagger UI and OpenAPI specification                           |
+| `analytics-api/app/` | FastAPI analytics routes, JWT validation, and database connections |
 | `sql/`                        | PostgreSQL schema and seed scripts                             |
 | `data/`                       | Sample order CSV                                               |
 | `compose.yml`                 | Local API and PostgreSQL services                              |
@@ -101,7 +124,7 @@ GET /orders?pageindex=1&pagesize=20&metro_city=Bangkok
 ## View logs and stop services
 
 ```powershell
-docker compose logs --tail 50 api-go
+docker compose logs --tail 50 api-go analytics-api
 docker compose down
 ```
 
