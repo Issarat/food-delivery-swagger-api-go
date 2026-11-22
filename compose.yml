@@ -45,6 +45,7 @@ services:
       POSTGRES_DB: food_delivery
       POSTGRES_USER: food_delivery
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     ports:
       - "127.0.0.1:8000:8000"
 volumes:
