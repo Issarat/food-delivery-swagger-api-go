@@ -11,6 +11,7 @@ type OrderRepository interface {
 	GetByID(ctx context.Context, orderID string) (*OrderDetail, error)
 	GetList(ctx context.Context, pageIndex, pageSize int, filter OrderFilter) ([]Order, error)
 }
+
 type PostgresOrderRepo struct {
 	db *pgxpool.Pool
 }
